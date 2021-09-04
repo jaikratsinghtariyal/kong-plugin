@@ -14,16 +14,12 @@
 
 local plugin = {
   PRIORITY = 1000, -- set the plugin priority, which determines plugin execution order
-  VERSION = "0.1",
+  VERSION = "0.1.0",
 }
-
-
 
 -- do initialization here, any module level code runs in the 'init_by_lua_block',
 -- before worker processes are forked. So anything you add here will run once,
 -- but be available in all workers.
-
-
 
 -- handles more initialization, but AFTER the worker process has been forked/created.
 -- It runs in the 'init_worker_by_lua_block'
@@ -33,8 +29,6 @@ function plugin:init_worker()
   kong.log.debug("saying hi from the 'init_worker' handler")
 
 end --]]
-
-
 
 --[[ runs in the 'ssl_certificate_by_lua_block'
 -- IMPORTANT: during the `certificate` phase neither `route`, `service`, nor `consumer`
@@ -65,9 +59,17 @@ end --]]
 -- runs in the 'access_by_lua_block'
 function plugin:access(plugin_conf)
 
-  -- your custom code here
-  kong.log.inspect(plugin_conf)   -- check the logs for a pretty-printed config!
-  kong.service.request.set_header(plugin_conf.request_header, "this is on a request")
+  if kong.request.get_header("X-Auth-Token") == "VENDOR-A" then 
+    kong.log.debug("Found for Vendor A" )   
+    return
+  elseif kong.request.get_header("X-Auth-Token") == "VENDOR-B" then 
+    kong.log.debug("Found for Vendor B" )    
+    return
+  elseif kong.request.get_header("X-Auth-Token") == "VENDOR-C" then   
+    kong.log.debug("Found for Vendor C" )  
+    return
+  else 
+    kong.response.exit(404, '{"error": "No Correct Header Found"}')
 
 end --]]
 
@@ -79,6 +81,7 @@ function plugin:header_filter(plugin_conf)
   kong.response.set_header(plugin_conf.response_header, "this is on the response")
 
 end --]]
+
 
 
 --[[ runs in the 'body_filter_by_lua_block'
